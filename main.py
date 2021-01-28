@@ -31,26 +31,39 @@ app = Flask(__name__)
 
 
 @app.route('/', methods=['GET'])
-def index(dictionary={}):
+def index(dictionary={}, curr_sites={}):
     sites = []
     if dictionary != {}:
         if "error" in dictionary.keys():
             sites.append("Простите, но нам не удалось найти информацию об этом городе,"
                          " проврьте правильность написания")
         else:
+            for key in curr_sites:
+                if curr_sites[key] == False:
+                    dictionary.pop(key)
+            if len(dictionary.keys()) == 0:
+                a = "Вы не выбрали никаких сайтов для вывода данных!"
+                sites.append(a)
             for key in dictionary.keys():
                 a = "По сайту " + key[0].upper() + key[1:] + " сейчас в этом городе " + str(dictionary[key])
                 sites.append(a)
-            a = "Средняя оценка температуры по всем данным: " + str(round(sum(dictionary.values()) / len(dictionary.keys()), 1))
-            sites.append(a)
+            if len(dictionary.keys()) > 1:
+                a = "Средняя оценка температуры по всем данным: " + str(round(sum(dictionary.values()) / len(dictionary.keys()), 1))
+                sites.append(a)
     return render_template('main_page.html', sites=sites, length=len(sites))
 
 
 @app.route('/', methods=['POST'])
 def index_post():
     city = request.form['form-control']
-    return index(dictionary=get_weather(city))
+
+    site_dic = dict()
+    site_dic['openweather'] = True if 'openweather' in request.form else False
+    site_dic['weatherapi'] = True if 'weatherapi' in request.form else False
+    site_dic['weatherbit'] = True if 'weatherbit' in request.form else False
+
+    return index(dictionary=get_weather(city), curr_sites=site_dic)
 
 
 if __name__ == '__main__':
-    app.run(port=8006, host='127.0.0.1')
+    app.run(port=8080, host='127.0.0.1')
